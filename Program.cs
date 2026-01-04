@@ -37,15 +37,33 @@ app.MapDelete("/products/{id}", async Task<IResult> (int id, [FromServices] AppD
 
 app.MapGet("/products/{id}", async Task<IResult> (int id, [FromServices] AppDbContext db) =>
 {
-    var productToBeUpdated = await db.Products.FindAsync(id);
+    var product = await db.Products.FindAsync(id);
 
-    if (productToBeUpdated is null) return TypedResults.NotFound();
+    if (product is null) return TypedResults.NotFound();
 
     return TypedResults.Ok(new
     {
-        data = productToBeUpdated,
-        Message = $"Successfully retrieved the product with ID of {id}"
+        Data = product,
+        Message = $"Successfully retrieved the product with ID of {id}",
+        Success = true
     });
+});
+
+app.MapPut("/products/{id}", async Task<IResult> (int id, [FromBody]UpdateProductDTO product, [FromServices] AppDbContext db) =>
+{
+    var productToBeUpdated = await db.Products.FindAsync(id);
+
+    if (productToBeUpdated is null) return TypedResults.NotFound(new
+    {
+        Message = $"Product with ID of {id} is not found"
+    });
+
+    productToBeUpdated.Name = product.Name ?? productToBeUpdated.Name;
+    productToBeUpdated.Price = product.Price ?? productToBeUpdated.Price;
+
+    await db.SaveChangesAsync();
+
+    return TypedResults.Ok();
 });
 
 app.Run();
