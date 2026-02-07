@@ -35,14 +35,22 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapPost("/auth/login", async Task<IResult> ([FromBody] LoginDTO payload) =>
+// Auth APIs
+app.MapPost("/auth/login", async Task<IResult> ([FromBody] LoginDTO payload, [FromServices] AppDbContext db) =>
 {
+    var user = await db.Users.FirstOrDefaultAsync(user => user.Username.Equals(payload.Username));
+
+    if (user is null) return TypedResults.NotFound();
+
+    // @TODO must be in bcrypt
+    if (user.Password != payload.Password) return TypedResults.Unauthorized();
+
     var accessTokenClaims = new[]
     {
-      new Claim(JwtRegisteredClaimNames.Sub, "sample"), // @TODO: username or id
+      new Claim(JwtRegisteredClaimNames.Sub, user.Username), 
       new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
       new Claim(JwtRegisteredClaimNames.Typ, "access_token"),
-      new Claim("role", "admin")
+      new Claim("role", user.Role.ToString())
     };
 
     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SECRET_KEY!));
@@ -67,6 +75,7 @@ app.MapPost("/auth/login", async Task<IResult> ([FromBody] LoginDTO payload) =>
     });
 });
 
+// Product APIs
 app.MapPost("/products", async ([FromBody] ProductDTO product, [FromServices] AppDbContext db) =>
 {
     await db.Products.AddAsync(new Product
