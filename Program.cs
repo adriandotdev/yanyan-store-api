@@ -8,6 +8,11 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var JwtConfig = builder.Configuration.GetSection("Jwt");
+var ISSUER = JwtConfig["Issuer"];
+var AUDIENCE = JwtConfig["Audience"];
+var SECRET_KEY = JwtConfig["SecretKey"];
+
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
@@ -17,10 +22,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        // @TODO: Move to appsettings.json
-        ValidIssuer = "sampleissuer",
-        ValidAudience = "sampleaudience",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_super_secret_key_your_super_secret_key_your_super_secret_key"))
+        ValidIssuer = ISSUER,
+        ValidAudience = AUDIENCE,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SECRET_KEY!))
     };
 });
 builder.Services.AddAuthorization();
@@ -31,22 +35,22 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapPost("/auth/login", async Task<IResult> () =>
+app.MapPost("/auth/login", async Task<IResult> ([FromBody] LoginDTO payload) =>
 {
     var accessTokenClaims = new[]
     {
-      new Claim(JwtRegisteredClaimNames.Sub, "sample"),
+      new Claim(JwtRegisteredClaimNames.Sub, "sample"), // @TODO: username or id
       new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
       new Claim(JwtRegisteredClaimNames.Typ, "access_token"),
       new Claim("role", "admin")
     };
 
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_super_secret_key_your_super_secret_key_your_super_secret_key"));
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SECRET_KEY!));
     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
     var accessToken = new JwtSecurityToken(
-        issuer: "sampleissuer",
-        audience: "sampleaudience",
+        issuer: ISSUER,
+        audience: AUDIENCE,
         claims: accessTokenClaims,
         expires: DateTime.Now.AddMinutes(15),
         signingCredentials: creds
