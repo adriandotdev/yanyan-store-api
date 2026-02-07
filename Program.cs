@@ -28,7 +28,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     };
 });
 builder.Services.AddAuthorization();
-builder.Services.AddAuthorizationBuilder().AddPolicy("admin_role", policy => policy.RequireRole("admin"));
+builder.Services.AddAuthorizationBuilder().AddPolicy("admin_role", policy => policy.RequireRole("Admin"));
 
 var app = builder.Build();
 
