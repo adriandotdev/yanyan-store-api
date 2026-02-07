@@ -36,7 +36,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Auth APIs
-app.MapPost("/auth/login", async Task<IResult> ([FromBody] LoginDTO payload, [FromServices] AppDbContext db) =>
+app.MapPost("/api/v1/auth/login", async Task<IResult> ([FromBody] LoginDTO payload, [FromServices] AppDbContext db) =>
 {
     var user = await db.Users.FirstOrDefaultAsync(user => user.Username.Equals(payload.Username));
 
@@ -76,7 +76,7 @@ app.MapPost("/auth/login", async Task<IResult> ([FromBody] LoginDTO payload, [Fr
 });
 
 // Product APIs
-app.MapPost("/products", async ([FromBody] ProductDTO product, [FromServices] AppDbContext db) =>
+app.MapPost("/api/v1/products", async ([FromBody] ProductDTO product, [FromServices] AppDbContext db) =>
 {
     await db.Products.AddAsync(new Product
     {
@@ -86,12 +86,12 @@ app.MapPost("/products", async ([FromBody] ProductDTO product, [FromServices] Ap
     await db.SaveChangesAsync();
 });
 
-app.MapGet("/products", async ([FromServices] AppDbContext db) =>
+app.MapGet("/api/v1/products", async ([FromServices] AppDbContext db) =>
 {
     return await db.Products.AsNoTracking().ToListAsync();
 }).RequireAuthorization("admin_role");
 
-app.MapDelete("/products/{id}", async Task<IResult> (int id, [FromServices] AppDbContext db) =>
+app.MapDelete("/api/v1/products/{id}", async Task<IResult> (int id, [FromServices] AppDbContext db) =>
 {
     var productToBeDeleted = await db.Products.FindAsync(id);
 
@@ -104,7 +104,7 @@ app.MapDelete("/products/{id}", async Task<IResult> (int id, [FromServices] AppD
     return TypedResults.NoContent();
 });
 
-app.MapGet("/products/{id}", async Task<IResult> (int id, [FromServices] AppDbContext db) =>
+app.MapGet("/api/v1/products/{id}", async Task<IResult> (int id, [FromServices] AppDbContext db) =>
 {
     var product = await db.Products.FindAsync(id);
 
@@ -118,7 +118,7 @@ app.MapGet("/products/{id}", async Task<IResult> (int id, [FromServices] AppDbCo
     });
 });
 
-app.MapPut("/products/{id}", async Task<IResult> (int id, [FromBody]UpdateProductDTO product, [FromServices] AppDbContext db) =>
+app.MapPut("/api/v1/products/{id}", async Task<IResult> (int id, [FromBody]UpdateProductDTO product, [FromServices] AppDbContext db) =>
 {
     var productToBeUpdated = await db.Products.FindAsync(id);
 
